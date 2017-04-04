@@ -1,0 +1,88 @@
+body { 
+    padding-bottom: 100px;
+    padding-top:70px;
+ }
+
+.jumbotron, .well {
+    padding: 5px 20px 5px 20px;
+}
+
+.jumbotron {
+    background-image: url('../img/pan04.jpg');
+    background-repeat: none;
+    background-size: cover;
+    color:#EEE;
+    text-shadow: 1px 0px #446;
+    margin-bottom:0;
+}
+
+.jumbotron h1 {
+    text-shadow: 2px 2px #446;
+    padding: 0 0 0 0;
+}
+.jumbotron p {
+    font-size:.9em;
+    margin-top:-10px;
+}
+
+.navbar {
+    background-color: #446;
+    margin-top:0;
+}
+
+
+
+.dropdown-toggle.active {
+    background-color: #ddd;
+}
+
+.modal-body, .modal-header {
+    text-align: center;
+}
+
+.list-group-item {
+    text-align: left;
+}
+
+.user-profile-picture {
+    width:90px;
+    float:left;
+    margin-right:5px;
+    border-radius: 100%;
+
+}
+
+#left-arrow {
+    font-size:50px;
+    position:absolute;
+    left:5%;
+    top:10%;
+}
+
+
+#right-arrow {
+    font-size:50px;
+    position:absolute;
+    left:90%;
+    top:10%;
+}
+
+    .winner-icon {
+    position:absolute;
+    left:100px;
+    top:10px; 
+    width:60px;
+    height:100px;
+}
+
+.thumbnail {
+    position:relative;
+}
+
+#all-contests {
+    background-color: #446;
+}
+
+main {
+    padding:1em;
+}

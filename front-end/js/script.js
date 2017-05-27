@@ -17,37 +17,38 @@ $(document).ready(function() {
     $('#login-button').hide();
     $('#logout-button').show();
   }
-  loadAllPics();
+
+
+  loadAllPics("reversedStarCount");
   $('#all-photos').show();
 
 
   // Listen for auth state changes
-  firebase.auth().onAuthStateChanged(function(user) {
-  if (user) {
-    console.log("New user logged in = " + user.uid + " " + user.displayName);
-      $('#current-user').html("Logged in as " + user.displayName);
-      $('#login-button').hide();
-      $('#logout-button').show();
-  } else {
-    console.log('nobody logged in');
-    $('#current-user').html("Not logged in");
-    $('#login-button').show();
-    $('#logout-button').hide();
-  }
+firebase.auth().onAuthStateChanged(function(user) {
+    if (user) {
+      console.log("New user logged in = " + user.uid + " " + user.displayName);
+        $('#current-user').html("Logged in as " + user.displayName);
+        $('#login-button').hide();
+        $('#logout-button').show();
+    } else {
+      console.log('nobody logged in');
+      $('#current-user').html("Not logged in");
+      $('#login-button').show();
+      $('#logout-button').hide();
+    }
 
-  if (user && currentUID === user.uid) {
-    return;
-  }
-  cleanupUi();
-  if (user) {
-    currentUID = user.uid;
-    writeUserData(user.uid, user.displayName, user.email, user.photoURL);
-    //startDatabaseQueries();
-  } else {
-    // Set currentUID to null.
-    currentUID = null;
-  }
-
+    if (user && currentUID === user.uid) {
+      return;
+    }
+    cleanupUi();
+    if (user) {
+      currentUID = user.uid;
+      writeUserData(user.uid, user.displayName, user.email, user.photoURL);
+      //startDatabaseQueries();
+    } else {
+      // Set currentUID to null.
+      currentUID = null;
+    }
 });
 
 /**
@@ -78,8 +79,16 @@ function cleanupUi() {
 /**
  * Saves a new post to the Firebase DB.
  */
-// [START write_fan_out]
-function writeNewPost(uid, username, picture, photoTitle, photoDescription, photoLocation, photoFile, ) {
+
+function writeNewPost(uid, username, picture, photoTitle, photoDescription, photoLocation, photoFile ) {
+
+ // get all #tags
+
+ var tagwords = /(?:^|\W)#(\w+)(?!\w)/g, match, matches = [];
+    while (match = tagwords.exec(photoDescription)) {
+      console.log(match[1]);
+      matches.push(match[1]);
+    }
 
  // upload picture
 
@@ -91,18 +100,16 @@ function writeNewPost(uid, username, picture, photoTitle, photoDescription, phot
      var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
      $("#uploadbar").attr("aria-valuenow",progress);
      $("#uploadbar").attr("style","width:" + progress + "%");
-     $("#uploadbar").html(Math.round(progress) + "% uploading...");
-     
-     
+     $("#uploadbar").html(Math.round(progress) + "% uploading...");   
     console.log('Upload is ' + progress + '% done');
   }, function(error){
     console.log("Something went wrong");
   }, function(){
     var downloadURL = uploadTask.snapshot.downloadURL;
     console.log("The download URL = " + downloadURL);
-    
-  
 
+var d = new Date();
+var reversedTimeStap = -(d.getTime());
 
   // A post entry.
   var postData = {
@@ -110,18 +117,20 @@ function writeNewPost(uid, username, picture, photoTitle, photoDescription, phot
     uid: uid,
     photoTitle: photoTitle,
     starCount: 0,
+    reversedStarCount: 5,
     authorPic: picture,
     photoDescription: photoDescription,
     photoLocation: photoLocation,
     photoFile: photoFile,
-    downloadURL: downloadURL
+    downloadURL: downloadURL,
+    createdAt: reversedTimeStap,
+    numberOfComments: 0
   };
 
   console.log("Posting" , postData);
 
   // Get a key for a new Post.
   var newPostKey = firebase.database().ref().child('posts').push().key;
-
   // Write the new post's data simultaneously in the posts list and the user's post list.
   var updates = {};
   updates['/posts/' + newPostKey] = postData;
@@ -129,39 +138,38 @@ function writeNewPost(uid, username, picture, photoTitle, photoDescription, phot
  return firebase.database().ref().update(updates);
 });
 }
-// [END write_fan_out]
 
-
-
-
-
-function loadAllPics() {
+// display all pictures on the screen. 1) read data from firebase 2) append element to the page
+function loadAllPics(orderBy) {
   // [START my_top_posts_query]
   //var myUserId = firebase.auth().currentUser.uid;
   var allPicsRef = firebase.database().ref('posts');
   $('#all-photos').html("");
-  allPicsRef.on('child_added', function(snapshot){
-    var newElement = createElement(snapshot.key, snapshot.val().author, snapshot.val().photoDescription, snapshot.val().downloadURL, snapshot.val().photoLocation, snapshot.val().photoTitle, snapshot.val().starCount);
+  allPicsRef.orderByChild(orderBy).on('child_added', function(snapshot){
+    var newElement = createElement(snapshot.key, snapshot.val().author, snapshot.val().photoDescription, snapshot.val().downloadURL, snapshot.val().photoLocation, snapshot.val().photoTitle, snapshot.val().starCount, snapshot.val().numberOfComments, snapshot.val().createdAt);    
     $('#all-photos').append(newElement);
   });
 } // loadAllPics
 
+
   // called by loadAllPics() function to create a gallery.
-  createElement = function(key, author, photoDescription, downloadURL, photoLocation, photoTitle, starCount) {
+createElement = function(key, author, photoDescription, downloadURL, photoLocation, photoTitle, starCount, numberOfComments, createdAt) {
+    
+    // convert timestamp to readable string
+    createdAt = -createdAt;
+    var d = new Date(createdAt);
+    var timeString = d.toLocaleString();
+    
     // Using Handlebars template to crate a new photo post.
     var template = $('#handlebars-photo-item').html();
     // Compile the template data into a function
     var templateScript = Handlebars.compile(template);
-    var context = { "key": key, "author" : author, "photoTitle" : photoTitle, "photoDescription" : photoDescription, "photoLocation" : photoLocation, "photoFileName": downloadURL, "startCount" : starCount };
+    var context = { "key": key, "author" : author, "photoTitle" : photoTitle, "photoDescription" : photoDescription, "photoLocation" : photoLocation, "photoFileName": downloadURL, "startCount" : starCount, "numberOfComments": - numberOfComments, "createdAt" : timeString };
     var html = templateScript(context);
 
     // return the html code which will be appended to the page.
     return html;
   } // createElement
-
-
-
-
 
 
 // button listeners
@@ -208,7 +216,6 @@ $('#inputFile').on('change', function(event){
     var photoDescription = $('#inputPhotoDescription').val();
     var photoLocation = $('#inputPhotoLocation').val();
     var photoFile = $('#inputFile').val();
-    console.log('you enetered', photoTitle, photoDescription, photoLocation, photoFile);
      if (photoTitle && photoDescription && photoLocation && photoFile) {
       newPostForCurrentUser(photoTitle, photoDescription, photoLocation, photoFile).then(function() {
         $('section').hide();
@@ -226,16 +233,15 @@ $('#inputFile').on('change', function(event){
 // View More button - more info about a picture - show ratings etc.
 $(document).on("click", ".pic-details", function() {
   var pictureNumber = $(this).closest("div").parent().parent().attr("data-photo-number");
-  //var pictureTitle = $(this).closest("div").find("h3").html();
-  //var pictureDescription = $(this).closest("div").find("p").html();
   loadModelDetailView(pictureNumber);
 
 });
 
-// test to see if star buttons work
+// handle star button clicks - update the text
 $(document).on("click", "#starButtons > .btn", function(e) {
     var starNumber = $(this).find('input:radio').attr('id');
-    console.log("Value is " + starNumber);
+    starNumber = Number(starNumber.substring(6,starNumber.length));
+    $("#star-rating-text").html(starNumber);
 });
 
 
@@ -245,23 +251,42 @@ $(document).on("click", "#save-comments", function(e) {
   var pictureNumber = $(this).attr("data-photo-number");
   var comments = $('#inputComments').val();
   var starNumber = $('#starButtons').find('input:checked').attr('id');
-  var photoTitle = $('.modal-title').html();
-
-  console.log (comments);
-  console.log(starNumber);  
-  console.log(pictureNumber);
-//save the comments, star rating and uid under the posts. Allow only one star rating per user.
-
+  starNumber = Number(starNumber.substring(6,starNumber.length));
+  var photoTitle = $(this).closest('.modal-content').find('.modal-title').html();
  var userId = firebase.auth().currentUser.uid;
-return firebase.database().ref('/users/' + userId).once('value').then(function(snapshot) {
+ if (comments) {
+  return firebase.database().ref('/users/' + userId).once('value').then(function(snapshot) {
       var username = snapshot.val().username;
-     return  writeNewComments(pictureNumber, userId, username, photoTitle, comments, starNumber);
+      return  writeNewComments(pictureNumber, userId, username, photoTitle, comments, starNumber);
   });
+ }
 });
 
 // write comments in three locations.
 function writeNewComments(picId, uid, username, photoTitle, commentText, starRating) {
-
+  // update the avgStar count
+  var allCommentsRef = firebase.database().ref('/posts-comments/' + picId);
+  var commentAvgStars = 0;
+  var commentSum = 0;
+  // commentSum = count the number of comments
+  allCommentsRef.once("value")
+  .then(function(snapshot) {
+    snapshot.forEach(function(childSnapshot) {
+       if (childSnapshot.val().starCount > 0) {
+          commentAvgStars += parseInt(childSnapshot.val().starCount);
+          commentSum += 1;
+        }
+  });
+  }).then(function() { 
+        var roundedStarCount = 0; 
+        if (commentAvgStars > 0 && commentSum > 0) {
+          roundedStarCount = (commentAvgStars / commentSum ).toFixed(1);
+        }
+        updatePhotoAverage(picId, uid, roundedStarCount, commentSum);
+        $("[data-photo-number=" + picId + "]").find("#badge-star-count").html(roundedStarCount);
+        $("[data-photo-number=" + picId + "]").find("#badge-comment-count").html(commentSum);
+        
+  }); 
   // A post entry.
   var postData = {
     picId: picId,
@@ -271,12 +296,7 @@ function writeNewComments(picId, uid, username, photoTitle, commentText, starRat
     starCount: starRating,
     commentText: commentText
   };
-
-  console.log("New comment data " , postData);
-
-  // Get a key for a new Post.
   var newPostKey = firebase.database().ref().child('comments').push().key;
-
   // Write the new comment's data simultaneously in the comments list, the user-comments list nad post-comments list.
   var updates = {};
   updates['/comments/' + newPostKey] = postData;
@@ -285,34 +305,88 @@ function writeNewComments(picId, uid, username, photoTitle, commentText, starRat
   
  return firebase.database().ref().update(updates);
 };
-
 // [END writeNewComments]
 
-
-
-// called when a "view more" button is clicked.  Create the modal box and fill it with data about the photo.
+// within the modal, load the comments for the photo.
 function loadModelDetailView(postID) {
-  console.log("loadModeDetailView starting with " + postID);
-
-  // $('#pictureDetailsModal').html("<span id='interior'></span>");
+  // load the photo and its details.
   var picRef = firebase.database().ref('/posts/' + postID);
     picRef.once('value').then(function(snapshot) {
-     console.log(snapshot.val().photoDescription);
-     console.log(snapshot.val().photoTitle);
     var newContent = createModalContent(snapshot.key, snapshot.val().author, snapshot.val().photoDescription, snapshot.val().downloadURL, snapshot.val().photoLocation, snapshot.val().photoTitle, snapshot.val().starCount, snapshot.val().uid, snapshot.val().author);
-    console.log(newContent);
     $('#pictureDetailsModal .modal-content').html(newContent);
+    // add the comments
+  var newComments = "<div class='list-group'><a href='#' class='list-group-item active'><h4 class='list-group-item-heading'>Comments</h4></a>";
+  var allCommentsRef = firebase.database().ref('/posts-comments/' + snapshot.key);
+  var commentAvgStars = 0;
+  var commentSum = 0;
+  var commentArray = [0,0,0,0,0,0];
+  allCommentsRef.once("value")
+  .then(function(snapshot) {
+    snapshot.forEach(function(childSnapshot) {
+        var newComment = createComment(childSnapshot.key, childSnapshot.val().author, childSnapshot.val().commentText, childSnapshot.val().starCount, childSnapshot.val().uid);
+        if (childSnapshot.val().starCount > 0) {
+          commentAvgStars += parseInt(childSnapshot.val().starCount);
+          commentSum += 1;
+          commentArray[childSnapshot.val().starCount] += 1;
+        }
+        newComments = newComments + newComment;
+  });
+  }).then(function() { 
+        var roundedStarCount = 0; 
+        if (commentAvgStars > 0 && commentSum > 0) {
+          roundedStarCount = (commentAvgStars / commentSum ).toFixed(1);
+        }
+        newComments = newComments + "<p>Avg star rating: " + roundedStarCount + "<br>";
+        updatePhotoAverage(postID, snapshot.val().uid, roundedStarCount, commentSum);
+        for(var i = 1; i <= 5; i++) {
+          newComments = newComments + "Number of " + i + " ratings: " + commentArray[i] + "<br>"
+        }
+        newComments = newComments + "<p></div>"; 
+        $('#modal-comments-section').html(newComments); 
+  }); 
  });
 } // loadModalDetailView
 
+  // used by previous function (loadModalDetailView) to update the average starCount value in the picture
+updatePhotoAverage = function(key, uid, avgRating, numberOfComments) {
+
+  var updates = {};
+  updates['/posts/' + key + '/starCount'] = avgRating;
+  updates['/user-posts/' + uid + '/' + key + '/starCount'  ] = avgRating;
+
+  updates['/posts/' + key + '/reversedStarCount'] = 5 - avgRating;
+  updates['/user-posts/' + uid + '/' + key + '/reversedStarCount'  ] = 5 - avgRating;
+
+   updates['/posts/' + key + '/numberOfComments'] = -numberOfComments;
+  updates['/user-posts/' + uid + '/' + key + '/numberOfComments'  ] = -numberOfComments;
+
+  
+  
+ return firebase.database().ref().update(updates);
+  }
 
 // called by more details button function to create a modal box.
-  createModalContent = function(key, author, photoDescription, downloadURL, photoLocation, photoTitle, starCount, uid, author) {
+createModalContent = function(key, author, photoDescription, downloadURL, photoLocation, photoTitle, starCount, uid, author) {
     // Using Handlebars template to crate a new photo post.
     var template = $('#handlebars-photo-details').html();
     // Compile the template data into a function
     var templateScript = Handlebars.compile(template);
     var context = { "key": key, "author" : author, "photoTitle" : photoTitle, "photoDescription" : photoDescription, "photoLocation" : photoLocation, "photoFileName": downloadURL, "startCount" : starCount };
+    var html = templateScript(context);
+    // return the html code which will be appended to the page.
+    return html;
+  } // create modal content
+
+
+
+
+// called by createCommentContent to generate html for a single comment.
+createComment = function(key, author, commentText, starCount, uid) {
+    // Using Handlebars template to crate a new photo post.
+    var template = $('#handlebars-photo-comments').html();
+    // Compile the template data into a function
+    var templateScript = Handlebars.compile(template);
+    var context = { "key": key, "author" : author, "commentText": commentText, "starCount" : starCount, "uid" : uid };
     var html = templateScript(context);
 
     // return the html code which will be appended to the page.
@@ -324,15 +398,9 @@ function loadModelDetailView(postID) {
  * Creates a new post for the current user.
  */
 function newPostForCurrentUser(photoTitle, photoDescription, photoLocation, photoFile) {
-  // [START single_value_read]
-
-  console.log('newPostForCurrentUser data = title ' + photoTitle + " description = " + photoDescription + " location = " + photoLocation + " photoFile = " + photoFile + " selectedFile = " + selectedFile );
-
   var userId = firebase.auth().currentUser.uid;
   return firebase.database().ref('/users/' + userId).once('value').then(function(snapshot) {
     var username = snapshot.val().username;
-    
-    // [START_EXCLUDE]
     return writeNewPost(firebase.auth().currentUser.uid, username,
         firebase.auth().currentUser.photoURL,
         photoTitle, 
@@ -340,35 +408,57 @@ function newPostForCurrentUser(photoTitle, photoDescription, photoLocation, phot
         photoLocation,
         photoFile
         );
-    // [END_EXCLUDE]
   });
-  // [END single_value_read]
 }
-    
+  
+
+
     // nav bar actions
     $('.button-contests').on('click', function(e){
         e.preventDefault();
         $('section').hide();
         $('#all-contests').show();
-    })
+    });
+
+     $('#button-photos-recent').on('click', function(e){
+        e.preventDefault();
+        $('section').hide();
+        loadAllPics("createdAt");
+        $('#all-contests').show();
+    });
+
+     $('#button-photos-comments').on('click', function(e){
+        e.preventDefault();
+        $('section').hide();
+        loadAllPics("numberOfComments");
+        $('#all-contests').show();
+    });
+
+     $('#button-photos-votes').on('click', function(e){
+        e.preventDefault();
+        $('section').hide();
+        loadAllPics("reversedStarCount");
+        $('#all-contests').show();
+    });
+
 
      $('.button-photos').on('click', function(e){
         e.preventDefault();
         $('section').hide();
         $('#all-photos').show();
-    })
+    });
 
     $('.button-photographers').on('click', function(e){
         e.preventDefault();
         $('section').hide();
         $('#all-photographers').show();
-    })
+    });
 
     $('.button-new-entry').on('click', function(e){
         e.preventDefault();
         $('section').hide();
         $('#new-entry').show();
-    })
+    });
 
     $('#button-login').on('click', function(e){
         e.preventDefault();
@@ -402,7 +492,6 @@ function newPostForCurrentUser(photoTitle, photoDescription, photoLocation, phot
     })
 
     // end nav bar actions
-
 
 
 

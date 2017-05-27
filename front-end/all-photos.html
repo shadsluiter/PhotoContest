@@ -147,7 +147,8 @@
       <img src= "{{photoFileName}}"  alt="image {{photoTitle}}">
       <div class="caption">
         <h3>{{ photoTitle}}</h3>
-        <p> {{photoDescription}} <span class="badge">{{startCount}}</span></p>
+        <p> {{photoDescription}}</p>
+        <p>Stars <span class="badge" id="badge-star-count">{{startCount}}</span> Comments <span class="badge" id="badge-comment-count"> {{numberOfComments}}</span> Created at {{ createdAt }}<p>
         <img class="winner-icon" src="img/winner-icon.png">
 
         <p><button class="btn btn-primary pic-details" type ="button" class = "btn btn-default" data-toggle="modal" data-target="#pictureDetailsModal">View More</button></p>
@@ -164,8 +165,6 @@
 <!-- pictureDetailsModal contents template -->
 
 <script id="handlebars-photo-details" type="text/x-handlebars-template">
-
-
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
@@ -176,7 +175,7 @@
 
       <div class="caption">
 
-        <p>{{ photoDescription }} <span class="badge">{{startCount}}</span></p>
+        <p>{{ photoDescription }} <span class="badge">{{starCount}}</span></p>
 
 
  <span id="left-arrow" class="glyphicon glyphicon-chevron-left" aria-hidden="false"></span>
@@ -184,37 +183,8 @@
  <img class="winner-icon" src="img/winner-icon.png">
        </div> <!-- caption -->
 
-<!-- comments -->
-       <div>  
-<div class="list-group">
-  <a href="#" class="list-group-item active">
-    <h4 class="list-group-item-heading">Comments</h4>
-  </a>
-
-  <a href="#" class="list-group-item">
-    <img class="user-profile-picture" src="img/default-user-icon-profile.png">
-    <h4 class="list-group-item-heading">Great Image</h4>
-    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quidem eos consequatur deserunt quisquam, minus incidunt, tempora, repellat officiis ab explicabo nam. Officiis sed accusamus dignissimos eos nobis aliquid dolore, officia?</p>
-  </a>
-  <a href="#" class="list-group-item ">
-    <img class="user-profile-picture" src="img/default-user-icon-profile.png">
-    <h4 class="list-group-item-heading">Great Image</h4>
-    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quidem eos consequatur deserunt quisquam, minus incidunt, tempora, repellat officiis ab explicabo nam. Officiis sed accusamus dignissimos eos nobis aliquid dolore, officia?</p>
-  </a>
-  <a href="#" class="list-group-item ">
-    <img class="user-profile-picture" src="img/default-user-icon-profile.png">
-    <h4 class="list-group-item-heading">Great Image</h4>
-    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quidem eos consequatur deserunt quisquam, minus incidunt, tempora, repellat officiis ab explicabo nam. Officiis sed accusamus dignissimos eos nobis aliquid dolore, officia?</p>
-  </a>
-  <a href="#" class="list-group-item ">
-    <img class="user-profile-picture" src="img/default-user-icon-profile.png">
-    <h4 class="list-group-item-heading">Great Image</h4>
-    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quidem eos consequatur deserunt quisquam, minus incidunt, tempora, repellat officiis ab explicabo nam. Officiis sed accusamus dignissimos eos nobis aliquid dolore, officia?</p>
-  </a>
-
-</div>
-
-       </div>
+       <div id="modal-comments-section">
+      </div>
 
       </div>  <!-- modal body -->
       <div class="modal-footer">
@@ -236,11 +206,11 @@
 <div class="form-group text-left">
   <label for="buttonRatings" class="col-sm-2 control-label">Rating</label>
   <div class="col-sm-10">
- <span>Rating <span class="badge">4</span> stars </span>
+ <span>Rating <span class="badge" id="star-rating-text">5</span> stars </span>
 
 <div id="starButtons" class="btn-group" data-toggle="buttons">
   <label class="btn btn-primary" id="label1">
-    <input type="radio" name="options" id="option1" autocomplete="off" checked>
+    <input type="radio" name="options" id="option1" autocomplete="off">
     <span class="glyphicon glyphicon-star" aria-hidden="true"></span>
   </label>
   <label class="btn btn-primary" id="label2">
@@ -251,12 +221,12 @@
     <input type="radio" name="options" id="option3" autocomplete="off"> 
     <span class="glyphicon glyphicon-star" aria-hidden="true"></span>
   </label>
-  <label class="btn btn-primary active" id="label4">
+  <label class="btn btn-primary" id="label4">
     <input type="radio" name="options" id="option4" autocomplete="off"> 
     <span class="glyphicon glyphicon-star" aria-hidden="true"></span>
   </label>
-  <label class="btn btn-primary" id="label5">
-    <input type="radio" name="options" id="option5" autocomplete="off"> 
+  <label class="btn btn-primary active" id="label5">
+    <input type="radio" name="options" id="option5" autocomplete="off" checked> 
     <span class="glyphicon glyphicon-star" aria-hidden="true"></span>
   </label>
 </div>
@@ -265,26 +235,29 @@
 <!--rating buttons -->
 
  <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-        <button id="save-comments" type="button" class="btn btn-primary" data-photo-number = {{ key }}>Save changes</button>
+<button id="save-comments" type="button" class="btn btn-primary" data-dismiss="modal" data-photo-number = {{ key }}>Save changes</button>
   
 </form>  <!-- add comments -->
-
-
-
 
            </div>  <!-- footer -->
 
     </div><!-- /.modal-content -->
 
 
-
-
-
-
-
-
-
 </script>
+
+
+
+
+<script id="handlebars-photo-comments" type="text/x-handlebars-template">
+  <a href="#" class="list-group-item">
+    <img class="user-profile-picture" src="img/default-user-icon-profile.png">
+    <h4 class="list-group-item-heading">{{ author }}</h4>
+    <p>{{ commentText }}</p>
+    <p> Star rating: {{ starCount}}</p>
+  </a>
+
+</script>  <!-- comments template -->
 
 
 

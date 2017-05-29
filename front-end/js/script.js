@@ -101,15 +101,15 @@ function writeNewPost(uid, username, picture, photoTitle, photoDescription, phot
      $("#uploadbar").attr("aria-valuenow",progress);
      $("#uploadbar").attr("style","width:" + progress + "%");
      $("#uploadbar").html(Math.round(progress) + "% uploading...");   
-    console.log('Upload is ' + progress + '% done');
+    //console.log('Upload is ' + progress + '% done');
   }, function(error){
     console.log("Something went wrong");
   }, function(){
     var downloadURL = uploadTask.snapshot.downloadURL;
     console.log("The download URL = " + downloadURL);
 
-var d = new Date();
-var reversedTimeStap = -(d.getTime());
+    var d = new Date();
+    var reversedTimeStap = -(d.getTime());
 
   // A post entry.
   var postData = {
@@ -127,15 +127,19 @@ var reversedTimeStap = -(d.getTime());
     numberOfComments: 0
   };
 
-  console.log("Posting" , postData);
-
+ 
   // Get a key for a new Post.
   var newPostKey = firebase.database().ref().child('posts').push().key;
   // Write the new post's data simultaneously in the posts list and the user's post list.
   var updates = {};
   updates['/posts/' + newPostKey] = postData;
   updates['/user-posts/' + uid + '/' + newPostKey] = postData;
- return firebase.database().ref().update(updates);
+  // matches is an array that contains all of the hashtag words in the description of the new photo
+  // create a dabase entry for each hashtag.  Add one to the hashtag counter.
+  matches.forEach(function(word) {
+    updates['/hashtags/'  + word + '/' + newPostKey ] = 1;  
+  });
+   return firebase.database().ref().update(updates);
 });
 }
 
@@ -171,6 +175,25 @@ createElement = function(key, author, photoDescription, downloadURL, photoLocati
     return html;
   } // createElement
 
+
+function loadAllHashtags() {
+  // [START my_top_posts_query]
+  //var myUserId = firebase.auth().currentUser.uid;
+  var allHashTagsRef = firebase.database().ref('hashtags');
+  $('#all-contests').html("");
+  allHashTagsRef.on('child_added', function(snapshot){
+    var newElement = createHashTagElement(snapshot.key);    
+    $('#all-contests').append(newElement);
+    console.log(newElement);
+  });
+} // loadAllHashtags
+
+function createHashTagElement(key) {
+  console.log(key);
+  html = "";
+  html = html + "<p>" + key + "</p>";
+  return html;
+}
 
 // button listeners
 
@@ -414,38 +437,35 @@ function newPostForCurrentUser(photoTitle, photoDescription, photoLocation, phot
 
 
     // nav bar actions
-    $('.button-contests').on('click', function(e){
-        e.preventDefault();
-        $('section').hide();
-        $('#all-contests').show();
-    });
+ 
 
      $('#button-photos-recent').on('click', function(e){
         e.preventDefault();
         $('section').hide();
         loadAllPics("createdAt");
-        $('#all-contests').show();
+        $('#all-photos').show();
     });
 
      $('#button-photos-comments').on('click', function(e){
         e.preventDefault();
         $('section').hide();
         loadAllPics("numberOfComments");
-        $('#all-contests').show();
+        $('#all-photos').show();
     });
 
      $('#button-photos-votes').on('click', function(e){
         e.preventDefault();
         $('section').hide();
         loadAllPics("reversedStarCount");
-        $('#all-contests').show();
+        $('#all-photos').show();
     });
 
 
-     $('.button-photos').on('click', function(e){
+     $('#button-constests-name').on('click', function(e){
         e.preventDefault();
         $('section').hide();
-        $('#all-photos').show();
+        loadAllHashtags();
+        $('#all-contests').show();
     });
 
     $('.button-photographers').on('click', function(e){

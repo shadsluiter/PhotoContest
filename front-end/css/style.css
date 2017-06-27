@@ -86,3 +86,15 @@ body {
 main {
     padding:1em;
 }
+
+.pic-details {
+    cursor: pointer;
+}
+
+.hide-award {
+    visibility: hidden;
+}
+
+.show-award {
+    visibility: visible;
+}
